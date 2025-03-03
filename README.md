@@ -1,3 +1,5 @@
+Project inspired by my G, claude 3.7 Sonnet
+
 # Reasoning VLM( RAG for image understanding)
 
 ## Intro
@@ -23,7 +25,7 @@ Core Capabilities To Develop
 
 "The image shows a white ceramic coffee mug positioned on the edge of a wooden desk. There are several papers and documents scattered across the desk surface. The mug appears to be full."
 
-**Your Enhanced Visual Reasoning System:**
+**Enhanced Visual Reasoning System:**
 
 "The coffee mug is positioned unusually - it's placed at the edge of the desk rather than in a stable central position (this occurs in only 3% of similar desk scenes in my database). The scattered papers suggest interrupted work, and the mug's precarious position indicates the person likely placed it down hastily. Based on similar scenes, this arrangement suggests the person was likely called away unexpectedly during work and may return shortly. The mug's position creates a risk of spilling, which would damage the papers below - an atypical risk situation compared to normal desk arrangements I've analyzed."
 
@@ -31,7 +33,7 @@ Core Capabilities To Develop
 
 - Identification of what's unusual based on comparison to similar scenes
 
-- Statistical context from your database of images
+- Statistical context from database of images
 
 - Temporal reasoning about what happened before and might happen after
 
@@ -40,4 +42,4 @@ Core Capabilities To Develop
 - Inferences about human behavior that caused this arrangement
 
 
-Your system doesn't just see what's there - it understands what's unusual, risky, or indicative of certain human behaviors based on comparative analysis.
+it system doesn't just see what's there - it understands what's unusual, risky, or indicative of certain human behaviors based on comparative analysis.
