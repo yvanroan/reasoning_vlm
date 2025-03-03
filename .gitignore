@@ -1,7 +1,8 @@
 client/node_modules
 server/venv
 server/.env
-server/images_processed/*
+server/processed_images/*
 server/images/*
 server/test_images/*
 server/__pycache__
+server/chroma_data

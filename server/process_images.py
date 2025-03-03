@@ -4,6 +4,7 @@ import aiohttp
 import aiofiles
 from pathlib import Path
 from vector_db import add_image_to_db
+from time import sleep
 
 # Configuration
 IMAGE_FOLDER = "images"  # Change this to your image folder path
@@ -35,7 +36,7 @@ async def process_single_image(session, image_path):
                 os.rename(image_path, processed_path)
 
                 analysis_result = {
-                    'image_name': os.path.basename(image_path),
+                    'image_path': str(processed_path),
                     'result': result
                 }
 
@@ -62,24 +63,24 @@ async def process_images():
         print("No images found to process!")
         return
     
-    results = []
-    i=1
+    i= len(list(Path(PROCESSED_FOLDER).iterdir())) +1
     # Process images concurrently
     async with aiohttp.ClientSession() as session:
         # Process images one at a time
         for image_path in image_files:
+            image_name = os.path.basename(image_path)
             result = await process_single_image(session, str(image_path))
-            if result:
-                # add_image_to_db("id"+str(i), result['image_name'], result['result'])
-                results.append(result)
-                i+=1
-            else:
-                print(i)
+            if not result:
                 print(f"Error processing {image_path}")
                 return None
+            
+            add_image_to_db("id"+str(i), result['image_path'], image_name, result['result'])
+            print(i)
+            i+=1
+            sleep(2)
     
     
-    print(f"Processed {len(results)} images successfully")
+    print(f"Processed {i} images successfully")
 
 if __name__ == "__main__":
     # Add aiofiles to requirements.txt

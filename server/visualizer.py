@@ -4,8 +4,8 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def display_image(db_results):
-    # print("DB Results:", db_results)  # Debug print
+def display_image():
+    db_results = get_all_images_from_db()
     
     if not db_results or 'embeddings' not in db_results:
         print("No embeddings found in database")
@@ -13,9 +13,7 @@ def display_image(db_results):
     
     embeddings = db_results['embeddings']
     metadata = db_results['metadatas']
-    print("Metadata:", metadata, len(metadata))
-    
-    print("Number of embeddings:", len(embeddings))  # Debug print
+
     if len(embeddings) == 0:
         print("No embeddings to visualize")
         return
@@ -39,7 +37,7 @@ def display_image(db_results):
     df = pd.DataFrame({
         'x': reduced_embeddings[:, 0],
         'y': reduced_embeddings[:, 1],
-        'image_path': [m['image_path'] for m in metadata],
+        'image_name': [m['image_name'] for m in metadata],
         'objects': [m['objects_in_image'] for m in metadata]
     })
 
@@ -47,7 +45,10 @@ def display_image(db_results):
         data_frame=df,
         x='x',
         y='y',
-        hover_data=['image_path', 'objects'],
+        hover_data=['image_name', 'objects'],
         title='t-SNE Visualization of Image Embeddings'
     )
     fig.show()
+
+if __name__ == "__main__":
+    display_image() 

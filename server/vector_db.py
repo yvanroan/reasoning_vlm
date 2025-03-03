@@ -1,35 +1,29 @@
 #https://www.datacamp.com/tutorial/chromadb-tutorial-step-by-step-guide
 
 import chromadb
-from extract_visual import extract_image_features
 from transformers import AutoImageProcessor, AutoModel
-import torch
-from PIL import Image
-import numpy as np  # Add numpy import
 from chromadb.utils.data_loaders import ImageLoader
 from chromadb.utils.embedding_functions import OpenCLIPEmbeddingFunction
 
 
-
-
-
 embedding_function = OpenCLIPEmbeddingFunction()
 data_loader = ImageLoader()
-# Initialize client and models once
-client = chromadb.Client()
-collection = client.create_collection("visual_concepts",
+
+client = chromadb.PersistentClient(path="chroma_data")
+
+collection = client.get_or_create_collection("visual_concept",
                                       embedding_function=embedding_function,
     data_loader=data_loader)
+
 processor = AutoImageProcessor.from_pretrained("openai/clip-vit-base-patch32")
 model = AutoModel.from_pretrained("openai/clip-vit-base-patch32")
 
-def add_image_to_db(image_id, image_path, objects_in_image):
-    # print("embeddings", embeddings)
-    # Store in DB
+def add_image_to_db(image_id, image_path,image_name, objects_in_image):
+    # print(f"Adding image with path: {image_path}")  # Debug print
     collection.add(
         ids=[image_id],
         uris=[image_path], 
-        metadatas=[{"image_path": image_path, "objects_in_image": objects_in_image}]
+        metadatas=[{"objects_in_image": objects_in_image, "image_name": image_name}]
     )
 
 def get_all_images_from_db():
