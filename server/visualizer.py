@@ -13,7 +13,7 @@ def display_image():
     
     embeddings = db_results['embeddings']
     metadata = db_results['metadatas']
-
+    ids = db_results['ids']
     if len(embeddings) == 0:
         print("No embeddings to visualize")
         return
@@ -22,21 +22,10 @@ def display_image():
     tsne = TSNE(n_components=2, perplexity=3) #perplexity has to be  less than the number of embeddings
     reduced_embeddings = tsne.fit_transform(embeddings)
 
-    # Choose either matplotlib or plotly for visualization:
-
-    # Option 1: Matplotlib
-    # plt.figure(figsize=(10, 8))
-    # plt.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1])
-    # plt.title('t-SNE Visualization of Image Embeddings')
-    # plt.xlabel('t-SNE 1')
-    # plt.ylabel('t-SNE 2')
-    # plt.show()
-
-    # Option 2: Plotly (interactive)
-
     df = pd.DataFrame({
         'x': reduced_embeddings[:, 0],
         'y': reduced_embeddings[:, 1],
+        'id': ids,
         'image_name': [m['image_name'] for m in metadata],
         'objects': [m['objects_in_image'] for m in metadata]
     })
@@ -45,7 +34,7 @@ def display_image():
         data_frame=df,
         x='x',
         y='y',
-        hover_data=['image_name', 'objects'],
+        hover_data=['id', 'image_name', 'objects'],
         title='t-SNE Visualization of Image Embeddings'
     )
     fig.show()

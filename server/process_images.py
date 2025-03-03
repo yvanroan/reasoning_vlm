@@ -52,18 +52,18 @@ async def process_single_image(session, image_path):
 async def process_images():
     # Create processed images folder if it doesn't exist
     os.makedirs(PROCESSED_FOLDER, exist_ok=True)
-    
+
+    cur_dataset_size= len(list(Path(PROCESSED_FOLDER).iterdir())) +1
     # Get list of images to process
     image_files = [
         f for f in Path(IMAGE_FOLDER).iterdir()
         if f.suffix.lower() in SUPPORTED_FORMATS
     ]
     
-    if not image_files:
-        print("No images found to process!")
+    if len(image_files) == 0:
+        print("No images found to process! Maybe you need to run get_dataset.py first")
         return
-    
-    i= len(list(Path(PROCESSED_FOLDER).iterdir())) +1
+
     # Process images concurrently
     async with aiohttp.ClientSession() as session:
         # Process images one at a time
@@ -74,13 +74,13 @@ async def process_images():
                 print(f"Error processing {image_path}")
                 return None
             
-            add_image_to_db("id"+str(i), result['image_path'], image_name, result['result'])
-            print(i)
-            i+=1
-            sleep(2)
+            add_image_to_db("id"+str(cur_dataset_size), result['image_path'], image_name, result['result'])
+            print(cur_dataset_size)
+            cur_dataset_size+=1
+            sleep(10)
     
     
-    print(f"Processed {i} images successfully")
+    print(f"Processed {cur_dataset_size} images successfully")
 
 if __name__ == "__main__":
     # Add aiofiles to requirements.txt

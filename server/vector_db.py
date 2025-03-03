@@ -11,15 +11,16 @@ data_loader = ImageLoader()
 
 client = chromadb.PersistentClient(path="chroma_data")
 
-collection = client.get_or_create_collection("visual_concept",
-                                      embedding_function=embedding_function,
-    data_loader=data_loader)
+collection = client.get_or_create_collection(
+    "visual_concept",
+    embedding_function=embedding_function,
+    data_loader=data_loader
+)
 
 processor = AutoImageProcessor.from_pretrained("openai/clip-vit-base-patch32")
 model = AutoModel.from_pretrained("openai/clip-vit-base-patch32")
 
 def add_image_to_db(image_id, image_path,image_name, objects_in_image):
-    # print(f"Adding image with path: {image_path}")  # Debug print
     collection.add(
         ids=[image_id],
         uris=[image_path], 
@@ -27,7 +28,6 @@ def add_image_to_db(image_id, image_path,image_name, objects_in_image):
     )
 
 def get_all_images_from_db():
-    # Include embeddings in the query
     return collection.get(include=['embeddings', 'metadatas'])
 
 def get_image_from_db(image_id):
