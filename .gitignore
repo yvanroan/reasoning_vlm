@@ -1,0 +1,5 @@
+client/node_modules
+server/venv
+server/.env
+server/extract_visual.py
+server/vector_db.py
