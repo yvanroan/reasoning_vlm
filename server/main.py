@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import base64
 import os
 from google import genai
-from google.genai import types
+from process_images import process_single_image
 
 # Load environment variables
 load_dotenv()
@@ -36,26 +36,26 @@ class TextRequest(BaseModel):
 
 @app.post("/analyze/image")
 async def analyze_image(image: UploadFile):
-    # try:
+    try:
         # Read the image file
-    image_contents = await image.read()
-    
-    # Create the message parts
-    message = [
-        "Describe how the objects in this image relate to each other spatially in a json format",
-        {
-            "inline_data": {
-                "mime_type": "image/jpeg",
-                "data": base64.b64encode(image_contents).decode('utf-8')
+        image_contents = await image.read()
+        
+        # Create the message parts
+        message = [
+            "name all entities in the image and nothing else",
+            {
+                "inline_data": {
+                    "mime_type": "image/jpeg",
+                    "data": base64.b64encode(image_contents).decode('utf-8')
+                }
             }
-        }
-    ]
-    
-    response = chat.send_message(message)
-    return response.text
+        ]
+        
+        response = chat.send_message(message)
+        return response.text
 
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))   
 
 @app.post("/analyze/text")
 async def analyze_text(request: TextRequest):
@@ -69,3 +69,6 @@ async def analyze_text(request: TextRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5000)
+
+    # x=process_single_image("images/young-woman-green-khaki-dress-stands-by-rosebush-smoky-skumpia-sunset-park_285806-447.jpeg")
+    # print(x)

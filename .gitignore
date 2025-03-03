@@ -1,5 +1,7 @@
 client/node_modules
 server/venv
 server/.env
-server/extract_visual.py
-server/vector_db.py
+server/images_processed/*
+server/images/*
+server/test_images/*
+server/__pycache__
