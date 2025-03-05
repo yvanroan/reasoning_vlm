@@ -46,7 +46,7 @@ it system doesn't just see what's there - it understands what's unusual, risky, 
 
 ## 2D t-SNE Visualization of Image Embeddings
 
-![output from visualizer.py](./asset_timestamp/mar_5.png)
+![output from visualizer.py](server/asset_timestamp/mar_5.png)
 
 ## Setup
 
