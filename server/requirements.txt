@@ -3,9 +3,8 @@ python-multipart
 uvicorn
 python-dotenv
 google-genai
-pydantic 
+pydantic
 transformers
-torch
 chromadb
 Pillow
 matplotlib
@@ -13,3 +12,5 @@ scikit-learn
 plotly
 aiohttp
 aiofiles
+spacy
+networkx

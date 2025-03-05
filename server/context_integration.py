@@ -4,7 +4,7 @@ import os
 from prompts import get_inference_prompt
 from vector_db import get_n_similar_images, get_image_from_db
 import json
-from info_extractor import clean_response_string
+from ingestion_pipeline import clean_response_string
 
     
 #this shouldn't care about the object labels because they are based on similar images 
@@ -188,7 +188,7 @@ async def analyze_image(image_id):
     # Stage 4: Generate inferences
     inferences = await generate_inference(scene_context, image_path)
     
-    print("image_path", image_path)
+    print("image_path from analyze_image in context_integration.py", image_path)
 
     return {
         "objects": objects,
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     import asyncio
     
     async def test():
-        result = await analyze_image("id27")
+        result = await analyze_image("id51")
         if result:
             print(result)
             
