@@ -26,15 +26,16 @@ def display_image():
         'x': reduced_embeddings[:, 0],
         'y': reduced_embeddings[:, 1],
         'id': ids,
-        'image_name': [m['image_name'] for m in metadata],
-        'objects': [m['objects_in_image'] for m in metadata]
+        'description': [m['description'] for m in metadata],
+        'objects': [m['objects_in_image'] for m in metadata],
+        'image_name': [m['image_name'] for m in metadata]
     })
 
     fig = px.scatter(
         data_frame=df,
         x='x',
         y='y',
-        hover_data=['id', 'image_name', 'objects'],
+        hover_data=['id', 'description', 'objects', 'image_name'],
         title='t-SNE Visualization of Image Embeddings'
     )
     fig.show()

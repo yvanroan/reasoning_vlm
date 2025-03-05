@@ -43,3 +43,15 @@ Core Capabilities To Develop
 
 
 it system doesn't just see what's there - it understands what's unusual, risky, or indicative of certain human behaviors based on comparative analysis.
+
+## 2D t-SNE Visualization of Image Embeddings
+
+![output from visualizer.py](./asset_timestamp/mar_5.png)
+
+## Setup
+
+1. Copy `server/prompts.template.py` to `server/prompts.py`
+2. Edit `prompts.py` with your actual prompts
+3. The file is gitignored so your prompts remain private
+
+n.b: The prompts shared in this project are simplified and do not reflect the exact ones used to achieve the results. These specific prompts will be shared at a later time.

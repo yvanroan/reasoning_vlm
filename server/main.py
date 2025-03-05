@@ -1,13 +1,13 @@
 #http://ai.google.dev/gemini-api/docs/migrate
 
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import base64
 import os
 from google import genai
-from process_images import process_single_image
+from prompts import IMAGE_ANALYSIS_PROMPT
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +34,28 @@ chat = client.chats.create(model='gemini-2.0-flash')
 class TextRequest(BaseModel):
     text: str
 
+@app.post("/analyze/all")
+async def inference(image: UploadFile, text: str = Form()):
+    try:
+        # Read the image file
+        image_contents = await image.read()
+       
+        message = [
+            text,
+            {
+                "inline_data": {
+                    "mime_type": "image/jpeg",
+                    "data": base64.b64encode(image_contents).decode('utf-8')
+                }
+            }
+        ]
+        
+        response = chat.send_message(message)
+        return response.text
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 
+
 @app.post("/analyze/image")
 async def analyze_image(image: UploadFile):
     try:
@@ -42,7 +64,7 @@ async def analyze_image(image: UploadFile):
         
         # Create the message parts
         message = [
-            "name all entities in the image and nothing else",
+            IMAGE_ANALYSIS_PROMPT,
             {
                 "inline_data": {
                     "mime_type": "image/jpeg",

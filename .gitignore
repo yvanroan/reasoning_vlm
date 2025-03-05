@@ -6,3 +6,9 @@ server/images/*
 server/test_images/*
 server/__pycache__
 server/chroma_data
+server/what.json
+server/chroma_backup
+server/backup.py
+server/prompts.py
+server/tests.py
+server/context_integration.py
