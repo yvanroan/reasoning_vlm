@@ -11,4 +11,3 @@ server/chroma_backup
 server/backup.py
 server/prompts.py
 server/tests.py
-server/context_integration.py
