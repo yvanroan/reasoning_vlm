@@ -50,7 +50,7 @@ it system doesn't just see what's there - it understands what's unusual, risky, 
 
 ## Knowledge Graph Visualization
 
-![output from knowledge_graph.py](server/asset_timestamp/mar_5_graph.png)
+![output from knowledge_graph.py](server/asset_timestamp/mar_5_obj.png)
 
 ## Setup
 
