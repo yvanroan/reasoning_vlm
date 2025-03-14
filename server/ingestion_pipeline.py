@@ -127,6 +127,15 @@ async def process_images():
     else:
         image_mapping = {}
 
+    id_to_name_file = "id_to_name_mapping.json" 
+    if os.path.exists(id_to_name_file):
+        with open(id_to_name_file, 'r') as f:
+            id_to_name = json.load(f)
+    else:
+        id_to_name = {}  
+
+    
+
     cur_dataset_size = len(list(Path(PROCESSED_FOLDER).iterdir())) + 1
     # Get list of images to process
     image_files = [
@@ -153,6 +162,7 @@ async def process_images():
             
             # Add to mapping
             image_mapping[image_name] = image_id
+            id_to_name[image_id] = image_name
             
             # Save mapping after each image
             with open(mapping_file, 'w') as f:
