@@ -33,9 +33,9 @@ def store_inference_feedback(image_id, inference, scene_context, rating):
     
     # Prepare metadata
     metadata = {
-        "image_id": image_id,
+            "image_id": image_id,
         "inference": inference if isinstance(inference, str) else json.dumps(inference),
-        "rating": rating,
+            "rating": rating,
         "timestamp": datetime.now().isoformat(),
         "scene_type": scene_context.get("scene_type", ""),
         "relationship_keys": json.dumps(relationship_keys),
@@ -78,12 +78,12 @@ def extract_relationship_keys(scene_context):
 def find_relevant_inference_patterns(scene_context, limit=3):
     """
     Find relevant inference patterns based on relationship structures.
-    
-    Args:
+        
+        Args:
         scene_context (dict): Current scene context
         limit (int): Maximum number of patterns to return
-        
-    Returns:
+            
+        Returns:
         list: Relevant inference patterns from past analyses
     """
     # Extract relationship keys from the current scene
@@ -243,22 +243,20 @@ def create_enhanced_prompt(scene_context):
     return prompt
 
 async def generate_enhanced_inference(scene_context, image_path):
-    """Generate inferences with few-shot learning enhancement"""
-    try:
-        # Create enhanced prompt with learned patterns
-        enhanced_prompt = create_enhanced_prompt(scene_context)
+    """
+    Generate inferences with few-shot learning enhancement.
+    
+    Args:
+        scene_context (dict): Scene context with objects and relationships
+        image_path (str): Path to the image file
+        generate_function (function): Async function that generates inferences given prompt and image path
         
-        # Create proper context dict for generate_inference
-        inference_context = {
-            "objects": scene_context.get("objects", {}),
-            "typical_relationships": scene_context.get("typical_relationships", []),
-            "atypical_relationships": scene_context.get("atypical_relationships", []),
-            "scene_type": scene_context.get("scene_type", "")
-        }
-        
-        # Call generate_inference with proper context
-        return await generate_inference(inference_context, image_path)
-        
-    except Exception as e:
-        print(f"Error in enhanced inference: {e}")
-        return None
+    Returns:
+        str: Generated inferences
+    """
+
+    # Create enhanced prompt with learned patterns
+    enhanced_prompt = create_enhanced_prompt(scene_context)
+    
+    # Call the provided generation function
+    return await generate_inference(enhanced_prompt, image_path)
