@@ -9,5 +9,7 @@ server/chroma_data
 server/what.json
 server/chroma_backup
 server/backup.py
-server/prompts.py
 server/tests.py
+server/image_mapping.json
+server/id_to_name_mapping.json
+
