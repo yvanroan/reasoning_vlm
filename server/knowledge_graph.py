@@ -22,12 +22,15 @@ def build_scene_graph(scene_analysis):
     # Add nodes for objects
     for obj_name, att in scene_analysis['objects'].items():
         graph.add_node(obj_name, type='object', properties=att)
+
+    all_relationships = scene_analysis['context'].get('typical_relationships', []) + \
+                       scene_analysis['context'].get('atypical_relationships', [])
     
     # Add relationship edges
-    for rel in scene_analysis['relationships']:
+    for rel in all_relationships:
         graph.add_edge(
-            rel['subject'],
-            rel['object'],
+            rel['subject'], 
+            rel['object'], 
             relation=(rel['spatial'], rel['functional'], rel['state'])
         )
     
@@ -222,7 +225,7 @@ async def process_scene(image_id):
     print(reasoning_results)
     # Visualize if needed
     visualize_scene_graph(graph)
-    
+
     return {
         'graph': graph,
         'reasoning': reasoning_results,
