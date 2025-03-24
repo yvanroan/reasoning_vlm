@@ -1,10 +1,10 @@
 import json
 import asyncio
 import os
-from context_integration import get_inference_from_context_integration, analyze_image, generate_inference
-from reasoning_loop import generate_enhanced_inference, store_inference_feedback, create_enhanced_prompt
+from context_integration import get_inference_from_context_integration, analyze_image
+from reasoning_loop import generate_enhanced_inference, store_inference_feedback
 from ingestion_pipeline import process_single_image
-from vector_db import add_image_to_db, delete_image_from_db 
+from vector_db import add_image_to_db 
 import aiohttp
 
 
@@ -121,7 +121,7 @@ async def compare_inferences(image_name):
         # Get enhanced inference
         print("\n2. Enhanced Inference with Learning:")
 
-        enhanced_inference = await generate_enhanced_inference(
+        enhanced_inference, _ = await generate_enhanced_inference(
             scene_context=scene_analysis,
             image_path=f"{PROCESSED_FOLDER}/{image_name}"
         )

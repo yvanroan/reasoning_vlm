@@ -100,57 +100,6 @@ def get_similar_images_metadata(image_id, n=6):
 
     return similar_relationships
 
-async def generate_inference(scene_context, image_path):
-    """
-    Generate inferences about a scene based on context and visual analysis.
-    
-    Args:
-        scene_context (dict): Context information including:
-            - objects: Dict of objects and their attributes
-            - typical_relationships: List of common relationships
-            - atypical_relationships: List of unusual relationships
-            - scene_type: General description of the scene
-        image_path (str): Path to the image file
-    
-    Returns:
-        str: Generated inferences about the scene, including potential past/future events
-    """
-    try:
-        # Read the image file
-        async with aiofiles.open(image_path, 'rb') as f:
-            file_data = await f.read()
-            
-        
-        prompt = get_context_integration_prompt(scene_context)
-            
-        # Create form data
-        form_data = aiohttp.FormData()
-        form_data.add_field('image',
-                          file_data,
-                          filename=os.path.basename(image_path),
-                          content_type='image/jpeg')
-        
-        form_data.add_field('text', 
-                    json.dumps({"text": prompt}),  # Send as JSON string
-                    content_type='application/json')
-
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post("http://localhost:5000/analyze/all", data=form_data) as response:
-                
-                response_text = await response.text()
-                
-                if response.status == 200:
-                    return response_text
-                else:
-                    print(f"Error analyzing image {image_path}: {response.status}")
-                    return None
-                    
-    except Exception as e:
-        print(f"Error analyzing image {image_path}: {str(e)}")
-        return None
-
-
 def analyze_image(image_id):
     """
     Complete image analysis pipeline combining visual analysis, context integration, and inference.
@@ -187,7 +136,7 @@ def analyze_image(image_id):
         # "similar_relationships": similar_relationships 
     }
     
-async def generate_inference(scene_context, image_path):
+async def generate_inference(prompt, image_path):
     """
     Generate inferences about a scene based on context and visual analysis.
     
@@ -207,9 +156,6 @@ async def generate_inference(scene_context, image_path):
         async with aiofiles.open(image_path, 'rb') as f:
             file_data = await f.read()
             
-        
-        prompt = get_context_integration_prompt(scene_context)
-            
         # Create form data
         form_data = aiohttp.FormData()
         form_data.add_field('image',
@@ -217,10 +163,10 @@ async def generate_inference(scene_context, image_path):
                           filename=os.path.basename(image_path),
                           content_type='image/jpeg')
         
+        
         form_data.add_field('text', 
                     json.dumps({"text": prompt}),  # Send as JSON string
                     content_type='application/json')
-
         
         async with aiohttp.ClientSession() as session:
             async with session.post("http://localhost:5000/analyze/all", data=form_data) as response:
@@ -237,8 +183,13 @@ async def generate_inference(scene_context, image_path):
         print(f"Error analyzing image {image_path}: {str(e)}")
         return None
 
+
+
+
 async def get_inference_from_context_integration(scene_context, image_id):
     image_metadata = get_image_from_db(image_id)
     image_path = image_metadata['uris'][0]
-    inf = await generate_inference(scene_context, image_path) 
+    prompt = get_context_integration_prompt(scene_context)
+    inf = await generate_inference(prompt, image_path) 
+    # print("inf", inf)
     return inf

@@ -49,6 +49,6 @@ def get_context_integration_prompt(scene_context):
     3. What might happen next given the current arrangement
     4. Any implied human activities or intentions suggested by the scene
 
-    just output the 3 sentences along with your reasoning based on the visual evidence.
+    only output the 3 sentences along with your reasoning based on the visual evidence.
     """
 

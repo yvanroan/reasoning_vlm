@@ -13,7 +13,7 @@ import re
 # Configuration
 IMAGE_FOLDER = "images"  # Change this to your image folder path
 PROCESSED_FOLDER = "processed_images"  # Folder to move processed images
-API_ENDPOINT = "http://localhost:5000/analyze/image"
+API_ENDPOINT = "http://localhost:5000/analyze/relationships/image"
 SUPPORTED_FORMATS = {'.jpg', '.jpeg'}
 
 

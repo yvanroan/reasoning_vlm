@@ -202,6 +202,8 @@ def create_enhanced_prompt(scene_context):
     # Find relevant patterns from past successful analyses
     relevant_patterns = find_relevant_inference_patterns(scene_context)
     
+
+
     # Add patterns to prompt if we found any
     if relevant_patterns:
         prompt += "\n\nBased on similar relationship patterns that were successfully analyzed before:"
@@ -211,7 +213,7 @@ def create_enhanced_prompt(scene_context):
             inference_text = pattern.get("inference", "")
             if not isinstance(inference_text, str):
                 inference_text = str(inference_text)
-                
+            
             # Create a preview of the inference
             words = inference_text.split()
             preview = " ".join(words[:min(10, len(words))]) + "..."
@@ -240,7 +242,7 @@ def create_enhanced_prompt(scene_context):
     just output the 3 sentences along with your reasoning based on the visual evidence.
     """
     
-    return prompt
+    return prompt, relevant_patterns
 
 async def generate_enhanced_inference(scene_context, image_path):
     """
@@ -256,7 +258,8 @@ async def generate_enhanced_inference(scene_context, image_path):
     """
 
     # Create enhanced prompt with learned patterns
-    enhanced_prompt = create_enhanced_prompt(scene_context)
+    enhanced_prompt, relevant_patterns = create_enhanced_prompt(scene_context)
+    
     
     # Call the provided generation function
-    return await generate_inference(enhanced_prompt, image_path)
+    return await generate_inference(enhanced_prompt, image_path), relevant_patterns
