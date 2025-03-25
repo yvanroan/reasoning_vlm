@@ -41,7 +41,7 @@ const ImageAnalysis = () => {
     formData.append('image', selectedImage);
 
     try {
-      const response = await fetch('http://localhost:5000/analyze/image', {
+      const response = await fetch('http://localhost:5000/analyze/relationships/image', {
         method: 'POST',
         body: formData,
       });

@@ -1,5 +1,5 @@
 import React from 'react';
-import ImageAnalysis from './ImageAnalysis';
+import ImageAnalysis from './page';
 import './App.css';
 
 function App() {
