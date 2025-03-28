@@ -47,6 +47,10 @@ this system doesn't just see what's there - it understands what's unusual, risky
 
 ![output from knowledge_graph.py](server/asset_timestamp/mar_5_obj.png)
 
+## Demo
+
+[![Video Demo](https://img.youtube.com/vi/u5JQQX6dCys/0.jpg)](https://www.youtube.com/watch?v=u5JQQX6dCys)
+
 
 ## Setup
 
