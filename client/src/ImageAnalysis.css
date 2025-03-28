@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .image-analysis-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -141,3 +145,454 @@ h1 {
     animation: fadeIn 0.5s ease-in-out;
   }
 } 
+
+/* Base styles */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #121212;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Particle animations */
+.particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  animation: float-particle var(--duration, 15s) infinite ease-in-out;
+}
+
+/* Different particle colors and sizes */
+.particle-0 { 
+  --duration: 15s;
+  background: #a78bfa;
+  width: 4px;
+  height: 4px;
+  left: 5%;
+}
+
+.particle-1 { 
+  --duration: 20s;
+  background: #34d399;
+  width: 8px;
+  height: 8px;
+  left: 15%;
+}
+
+.particle-2 { 
+  --duration: 18s;
+  background: #8b5cf6;
+  width: 5px;
+  height: 5px;
+  left: 25%;
+}
+
+.particle-3 { 
+  --duration: 22s;
+  background: #6ee7b7;
+  width: 6px;
+  height: 6px;
+  left: 35%;
+}
+
+.particle-4 { 
+  --duration: 25s;
+  background: #c4b5fd;
+  width: 7px;
+  height: 7px;
+  left: 45%;
+}
+
+.particle-5 { 
+  --duration: 17s;
+  background: #34d399;
+  width: 5px;
+  height: 5px;
+  left: 55%;
+}
+
+.particle-6 { 
+  --duration: 21s;
+  background: #a78bfa;
+  width: 6px;
+  height: 6px;
+  left: 65%;
+}
+
+.particle-7 { 
+  --duration: 19s;
+  background: #8b5cf6;
+  width: 4px;
+  height: 4px;
+  left: 75%;
+}
+
+.particle-8 { 
+  --duration: 23s;
+  background: #6ee7b7;
+  width: 8px;
+  height: 8px;
+  left: 85%;
+}
+
+.particle-9 { 
+  --duration: 16s;
+  background: #c4b5fd;
+  width: 5px;
+  height: 5px;
+  left: 95%;
+}
+
+/* Additional particles with different positions */
+.particle-10 { 
+  --duration: 24s;
+  background: #a78bfa;
+  width: 6px;
+  height: 6px;
+  left: 10%;
+}
+
+.particle-11 { 
+  --duration: 19s;
+  background: #34d399;
+  width: 7px;
+  height: 7px;
+  left: 20%;
+}
+
+.particle-12 { 
+  --duration: 22s;
+  background: #8b5cf6;
+  width: 5px;
+  height: 5px;
+  left: 30%;
+}
+
+.particle-13 { 
+  --duration: 18s;
+  background: #6ee7b7;
+  width: 4px;
+  height: 4px;
+  left: 40%;
+}
+
+.particle-14 { 
+  --duration: 21s;
+  background: #c4b5fd;
+  width: 6px;
+  height: 6px;
+  left: 50%;
+}
+
+.particle-15 { 
+  --duration: 25s;
+  background: #34d399;
+  width: 8px;
+  height: 8px;
+  left: 60%;
+}
+
+.particle-16 { 
+  --duration: 17s;
+  background: #a78bfa;
+  width: 5px;
+  height: 5px;
+  left: 70%;
+}
+
+.particle-17 { 
+  --duration: 23s;
+  background: #8b5cf6;
+  width: 7px;
+  height: 7px;
+  left: 80%;
+}
+
+.particle-18 { 
+  --duration: 20s;
+  background: #6ee7b7;
+  width: 6px;
+  height: 6px;
+  left: 90%;
+}
+
+.particle-19 { 
+  --duration: 16s;
+  background: #c4b5fd;
+  width: 4px;
+  height: 4px;
+  left: 100%;
+}
+
+@keyframes float-particle {
+  0% {
+    transform: translateY(100vh) translateX(0) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(50vh) translateX(20px) scale(1.2);
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(0) translateX(-20px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Ghibli-inspired styles */
+.ghibli-title {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.05em;
+}
+
+/* Enhanced hover effects */
+.hover-card {
+  transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Image container effects */
+.image-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.image-container:hover img {
+  transform: scale(1.05);
+}
+
+.image-container img {
+  transition: transform 0.5s ease;
+}
+
+/* Button animation */
+.animated-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.animated-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.animated-button:hover::before {
+  left: 100%;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Ghibli and Frieren inspired styles */
+.ghibli-title {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+  letter-spacing: 0.05em;
+}
+
+/* Cloud animations */
+.cloud {
+  position: absolute;
+  background-color: white;
+  border-radius: 9999px;
+  opacity: 0.8;
+  filter: blur(10px);
+}
+
+.cloud-1 {
+  width: 160px;
+  height: 80px;
+  left: 10%;
+  top: 80px;
+  animation: float-slow 15s ease-in-out infinite;
+}
+
+.cloud-2 {
+  width: 240px;
+  height: 96px;
+  right: 15%;
+  top: 160px;
+  animation: float-medium 10s ease-in-out infinite;
+}
+
+.cloud-3 {
+  width: 128px;
+  height: 64px;
+  left: 30%;
+  top: 240px;
+  animation: float-fast 8s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-100px) translateX(50px) scale(1.2);
+    opacity: 0.2;
+  }
+  75% {
+    opacity: 0.6;
+  }
+}
+
+/* Decorative image animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  75% {
+    transform: translateY(15px) rotate(1deg);
+  }
+}
+
+/* Enhanced image effects */
+.decorative-image {
+  filter: brightness(0.9) contrast(1.1);
+  transition: all 0.5s ease;
+}
+
+.decorative-image:hover {
+  filter: brightness(1.1) contrast(1.2);
+}
+
+.glow-effect {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle at center, 
+    rgba(167, 139, 250, 0.2),
+    rgba(52, 211, 153, 0.2),
+    transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.image-wrapper:hover .glow-effect {
+  opacity: 1;
+}
+

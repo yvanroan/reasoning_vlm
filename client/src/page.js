@@ -1,7 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import './ImageAnalysis.css';
+import './VisualReasoningApp.css';
 
-const ImageAnalysis = () => {
+// Pattern Display Component
+const PatternDisplay = ({ pattern }) => {
+  // Convert rating to number of stars (1 = 5 stars, 0.8 = 4 stars, etc.)
+  const getStarCount = (rating) => {
+    if (rating >= 1) return 5;
+    if (rating >= 0.8) return 4;
+    if (rating >= 0.6) return 3;
+    if (rating >= 0.4) return 2;
+    if (rating >= 0.2) return 1;
+    return 0;
+  };
+
+  const starCount = getStarCount(pattern.rating);
+
+  return (
+    <div className="pattern-card">
+      {/* Image Section */}
+      <div className="pattern-image">
+        <img 
+          src={`http://localhost:8000/processed_images/${pattern.image_name}`}
+          alt={pattern.scene_type}
+        />
+      </div>
+
+      {/* Scene Type */}
+      <div className="pattern-type">{pattern.scene_type}</div>
+
+      {/* Inference Section */}
+      <div className="pattern-inference">
+        {pattern.inference}
+      </div>
+
+      {/* Rating Section */}
+      <div className="pattern-rating">
+        {[...Array(5)].map((_, index) => (
+          <span key={index} className={`star ${index < starCount ? "filled" : "empty"}`}>
+            ★
+          </span>
+        ))}
+      </div>
+
+      {/* Relationships Section */}
+      <div className="pattern-relationships-container">
+        {pattern.typical_relationships && pattern.typical_relationships.length > 0 && (
+          <div className="pattern-relationships">
+            <h4>Common Patterns:</h4>
+            <ul>
+              {pattern.typical_relationships.map((rel, index) => (
+                <li key={`typical-${index}`}>
+                  <span className="relationship-subject">{rel.subject}</span>
+                  <span className="relationship-spatial">{rel.spatial}</span>
+                  <span className="relationship-object">{rel.object}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {pattern.atypical_relationships && pattern.atypical_relationships.length > 0 && (
+          <div className="pattern-relationships unusual">
+            <h4>Unusual Patterns:</h4>
+            <ul>
+              {pattern.atypical_relationships.map((rel, index) => (
+                <li key={`atypical-${index}`}>
+                  <span className="relationship-subject">{rel.subject}</span>
+                  <span className="relationship-spatial">{rel.spatial}</span>
+                  <span className="relationship-object">{rel.object}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Format analysis text with special styling for numbered points
+const formatAnalysisText = (text) => {
+  if (!text) return "";
+  
+  // Replace numbered points with styled versions
+  return text.replace(/(\d+\.\s)([^\n]+)/g, (match, number, content) => {
+    return `<div class="analysis-point"><span class="point-number">${number}</span>${content}</div>`;
+  });
+};
+
+const Page = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [textInput, setTextInput] = useState('');
@@ -17,10 +105,11 @@ const ImageAnalysis = () => {
   const [analysisStage, setAnalysisStage] = useState('initial');
   const [sceneContext, setSceneContext] = useState(null);
   const [relevantPatterns, setRelevantPatterns] = useState(null);
+  const [relationshipKeys, setRelationshipKeys] = useState(null);
 
   // Fetch list of existing files when component mounts
   useEffect(() => {
-    fetch('http://localhost:5000/files')
+    fetch('http://localhost:8000/files')
       .then(response => response.json())
       .then(data => {
         if (data.files) {
@@ -71,7 +160,7 @@ const ImageAnalysis = () => {
 
     try {
       // First get basic analysis
-      const response = await fetch('http://localhost:5000/inference/basic', {
+      const response = await fetch('http://localhost:8000/inference/basic', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,10 +194,11 @@ const ImageAnalysis = () => {
       console.log("Submitting feedback with:", {
         filename,
         basicRating,
-        basicFeedback
+        basicFeedback,
+        sceneContext
       });
 
-      const response = await fetch('http://localhost:5000/feedback', {
+      const response = await fetch('http://localhost:8000/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,29 +207,35 @@ const ImageAnalysis = () => {
           filename: filename,
           basicRating,
           basicFeedback,
+          sceneContext
         }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.log(filename);
         console.error("Feedback submission failed:", errorText);
         throw new Error(`Feedback submission failed: ${errorText}`);
       }
 
+      const feedbackData = await response.json();
+      const feedbackId = feedbackData.feedback_id;
+
       console.log("Feedback submitted successfully, requesting enhanced analysis with:", {
         filename,
-        scene_analysis: sceneContext
+        feedback_id: feedbackId
       });
 
       // After successful feedback submission, get enhanced analysis
-      const enhancedResponse = await fetch('http://localhost:5000/inference/enhanced', {
+      const enhancedResponse = await fetch('http://localhost:8000/inference/enhanced', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           filename,
-          scene_analysis: sceneContext 
+          scene_analysis: sceneContext,
+          feedback_id: feedbackId
         })
       });
 
@@ -152,6 +248,7 @@ const ImageAnalysis = () => {
       const enhancedData = await enhancedResponse.json();
       setEnhancedAnalysis(enhancedData.text);
       setRelevantPatterns(enhancedData.relevant_patterns);
+      setRelationshipKeys(enhancedData.relationship_keys);
       setAnalysisStage('enhanced');
       
     } catch (err) {
@@ -172,6 +269,7 @@ const ImageAnalysis = () => {
     setError(null);
     setBasicRating(0);
     setBasicFeedback('');
+    setRelationshipKeys(null);
   };
 
   const StarRating = ({ rating, setRating }) => {
@@ -201,89 +299,101 @@ const ImageAnalysis = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-      <div className="max-w-4xl mx-auto p-8 text-center">
-        <h1 className="text-3xl font-bold mb-8">
-          Visual Reasoning with Few-Shot Learning
-        </h1>
+    <div className="visual-reasoning-app">
+      {/* Magical particles for ethereal effect */}
+      <div className="magical-particles">
+        {[...Array(20)].map((_, i) => (
+          <div key={i} className={`particle particle-${i % 5}`}></div>
+        ))}
+      </div>
 
-        {/* <div className="mb-6 flex justify-center gap-4">
-          <button
-            className={`px-4 py-2 rounded-md transition-colors ${
-              mode === 'image' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
-            onClick={() => setMode('image')}
-          >
-            Image Analysis
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md transition-colors ${
-              mode === 'text' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
-            onClick={() => setMode('text')}
-          >
-            Text Analysis
-          </button>
-        </div> */}
-        
+      <div className="app-container">
+        <header className="app-header">
+          <h1>Visual Reasoning</h1>
+          <div className="subtitle">Discover the hidden patterns in your images</div>
+        </header>
+
+        {error && <div className="error-message">{error}</div>}
+
         {analysisStage === 'initial' && (
-          <div className="mb-4">
-            <div className="bg-gray-800 p-4 rounded-lg mb-4">
-              <h3 className="text-lg font-semibold mb-2">Analyze Existing Image  from Images Folder</h3>
-              <div className="flex items-center">
-                <select
-                  className="flex-grow p-2 bg-gray-700 rounded-l text-white"
-                  value={filename}
-                  onChange={handleFilenameChange}
-                >
-                  <option value="">Select an image...</option>
-                  {existingFiles.map(file => (
-                    <option key={file} value={file}>{file}</option>
-                  ))}
-                </select>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-r"
-                  onClick={handleAnalyze}
-                  disabled={loading || !filename}
-                >
-                  Analyze
-                </button>
-              </div>
-            </div>
+          <div className="initial-stage">
+            <div className="image-selection-container">
+              <div className="selection-methods">
+                <div className="selection-method">
+                  <h3>Choose from existing images</h3>
+                  <select
+                    className="file-select"
+                    value={filename}
+                    onChange={handleFilenameChange}
+                    disabled={loading}
+                  >
+                    <option value="">Select an image...</option>
+                    {existingFiles.map(file => (
+                      <option key={file} value={file}>{file}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div 
-              className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4 bg-gray-50 text-gray-800 transition-colors hover:border-blue-500"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-            >
-              {!imagePreview ? (
-                <>
-                  <h3 className="text-lg font-semibold mb-2">OR Upload New Image</h3>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    id="file-input"
-                    className="hidden"
-                  />
-                  <label 
-                    htmlFor="file-input" 
-                    className="cursor-pointer block w-full h-full"
+                <div className="selection-divider">
+                  <span>or</span>
+                </div>
+
+                <div className="selection-method">
+                  <h3>Upload a new image</h3>
+                  <div 
+                    className={`dropzone ${imagePreview ? 'active' : ''}`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
                   >
-                    <div className="flex flex-col items-center gap-4">
-                      <i className="fas fa-cloud-upload-alt text-5xl"></i>
-                      <p>Drag and drop an image or click to select</p>
-                    </div>
-                  </label>
-                </>
-              ) : (
-                <div className="relative inline-block">
-                  <ImagePreview file={selectedImage} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      id="file-input"
+                      className="hidden"
+                    />
+                    <label htmlFor="file-input" className="cursor-pointer">
+                      {imagePreview ? (
+                        <div className="image-preview">
+                          <img 
+                            src={imagePreview} 
+                            alt="Preview" 
+                            style={{ maxWidth: '300px', maxHeight: '300px', objectFit: 'contain' }}
+                          />
+                          <button 
+                            className="remove-button"
+                            onClick={resetState}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p>Drag & drop an image here, or click to select</p>
+                          <button className="browse-button">Browse Files</button>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {(filename || imagePreview) && (
+                <div className="image-preview-container">
+                  <h3>Selected Image</h3>
+                  <div className="image-preview">
+                    <img
+                      src={imagePreview || `http://localhost:8000/images/${filename}`}
+                      alt="Preview"
+                      style={{ maxWidth: '300px', maxHeight: '300px', objectFit: 'contain' }}
+                    />
+                  </div>
                   <button 
-                    className="absolute top-2 right-2 bg-white/90 px-4 py-2 rounded text-red-600 hover:bg-white"
-                    onClick={resetState}
+                    className="analyze-button" 
+                    onClick={handleAnalyze} 
+                    disabled={loading || (!filename && !imagePreview)}
                   >
-                    Remove
+                    {loading ? <span className="loading-spinner"></span> : "Analyze Image"}
                   </button>
                 </div>
               )}
@@ -292,66 +402,47 @@ const ImageAnalysis = () => {
         )}
 
         {analysisStage === 'basic' && basicAnalysis && (
-          <div className="mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Image Display */}
-              <div className="bg-gray-800 p-6 rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Selected Image</h2>
-                <div className="flex justify-center items-center bg-[#1a1a1a] p-4 rounded-lg border border-gray-700 min-h-[300px]">
+          <div className="basic-stage">
+            <div className="analysis-container">
+              <div className="image-column">
+                <h3>Original Image</h3>
+                <div className="image-display">
                   <img 
-                    src={`http://localhost:5000/processed_images/${filename}`}
+                    src={`http://localhost:8000/processed_images/${filename}`}
                     alt="Selected scene"
-                    className="max-w-full max-h-[300px] object-contain"
+                    style={{ maxWidth: '300px', maxHeight: '300px', objectFit: 'contain' }}
                   />
                 </div>
               </div>
 
-              {/* Analysis Display */}
-              <div className="bg-gray-800 p-6 rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Basic Analysis</h2>
-                <div className="bg-[#1a1a1a] p-6 rounded-lg border border-gray-700 min-h-[300px] text-left overflow-auto">
-                  {typeof basicAnalysis === 'string' ? (
-                    // Split the text into paragraphs and format them
-                    basicAnalysis.split('\n').map((paragraph, index) => (
-                      <p 
-                        key={index} 
-                        className={`text-gray-300 text-base leading-relaxed mb-4 ${
-                          paragraph.startsWith('1.') || 
-                          paragraph.startsWith('2.') || 
-                          paragraph.startsWith('3.') 
-                            ? 'font-semibold text-blue-400' 
-                            : ''
-                        }`}
-                      >
-                        {paragraph}
-                      </p>
-                    ))
-                  ) : (
-                    <pre className="whitespace-pre-wrap text-gray-300 text-base leading-relaxed">
-                      {JSON.stringify(basicAnalysis, null, 2)}
-                    </pre>
-                  )}
-                </div>
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold">Rate this analysis:</h3>
+              <div className="analysis-column">
+                <h3>Basic Analysis (with extracted relationships)</h3>
+                <div 
+                  className="analysis-text"
+                  dangerouslySetInnerHTML={{ __html: formatAnalysisText(basicAnalysis) }}
+                />
+
+                <div className="feedback-section">
+                  <h3>How helpful was this analysis?</h3>
                   <StarRating rating={basicRating} setRating={setBasicRating} />
-                  <textarea
-                    className="w-full mt-2 p-2 bg-gray-700 text-white border border-gray-600 rounded resize-none"
-                    placeholder="Optional feedback or comments..."
-                    rows="2"
-                    value={basicFeedback}
-                    onChange={(e) => setBasicFeedback(e.target.value)}
-                  ></textarea>
+
+                  <div className="feedback-input">
+                    <label htmlFor="feedback">Additional Feedback (optional):</label>
+                    <textarea
+                      id="feedback"
+                      value={basicFeedback}
+                      onChange={(e) => setBasicFeedback(e.target.value)}
+                      placeholder="Share your thoughts on the analysis..."
+                      rows={4}
+                    />
+                  </div>
+
                   <button
-                    className={`w-full mt-4 py-3 px-6 text-lg rounded-md transition-colors ${
-                      submitting || basicRating === 0
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
+                    className="submit-button"
                     onClick={handleFeedbackSubmit}
                     disabled={submitting || basicRating === 0}
                   >
-                    {submitting ? 'Submitting...' : 'Submit Feedback & Get Enhanced Analysis'}
+                    {submitting ? <span className="loading-spinner"></span> : "Submit & Get Enhanced Analysis"}
                   </button>
                 </div>
               </div>
@@ -360,138 +451,81 @@ const ImageAnalysis = () => {
         )}
 
         {analysisStage === 'enhanced' && enhancedAnalysis && (
-          <div className="mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Image Display */}
-              <div className="bg-gray-800 p-6 rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Selected Image</h2>
-                <div className="flex justify-center items-center bg-[#1a1a1a] p-4 rounded-lg border border-gray-700 min-h-[300px]">
+          <div className="enhanced-stage">
+            <div className="enhanced-container">
+              {/* Original Image Section */}
+              <div className="original-image-section">
+                <h3>Original Image</h3>
+                <div className="image-display">
                   <img 
-                    src={`http://localhost:5000/processed_images/${filename}`}
+                    src={`http://localhost:8000/processed_images/${filename}`}
                     alt="Selected scene"
-                    className="max-w-full max-h-[300px] object-contain"
+                    style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
                   />
                 </div>
               </div>
 
-              {/* Combined Analysis Display */}
-              <div className="flex flex-col gap-6">
-                {/* Basic Analysis */}
-                <div className="bg-gray-800 p-6 rounded-lg shadow-sm">
-                  <h2 className="text-xl font-semibold mb-4">Basic Analysis</h2>
-                  <div className="bg-[#1a1a1a] p-6 rounded-lg border border-gray-700 min-h-[200px] text-left overflow-auto">
-                    {typeof basicAnalysis === 'string' ? (
-                      basicAnalysis.split('\n').map((paragraph, index) => (
-                        <p 
-                          key={index} 
-                          className={`text-gray-300 text-base leading-relaxed mb-4 ${
-                            paragraph.startsWith('1.') || 
-                            paragraph.startsWith('2.') || 
-                            paragraph.startsWith('3.') 
-                              ? 'font-semibold text-blue-400' 
-                              : ''
-                          }`}
-                        >
-                          {paragraph}
-                        </p>
-                      ))
-                    ) : (
-                      <pre className="whitespace-pre-wrap text-gray-300 text-base leading-relaxed">
-                        {JSON.stringify(basicAnalysis, null, 2)}
-                      </pre>
-                    )}
-                  </div>
+              {/* Analysis Comparison Section */}
+              <div className="analysis-comparison">
+                {/* Basic Analysis Column */}
+                <div className="basic-analysis-column">
+                  <h3>Basic Analysis (with extracted relationships)</h3>
+                  <div 
+                    className="analysis-text"
+                    dangerouslySetInnerHTML={{ __html: formatAnalysisText(basicAnalysis) }}
+                  />
                 </div>
 
-                {/* Enhanced Analysis */}
-                <div className="bg-gray-800 p-6 rounded-lg shadow-sm">
-                  <h2 className="text-xl font-semibold mb-4">Enhanced Analysis (Few-Shot Learning)</h2>
-                  <div className="bg-[#1a1a1a] p-6 rounded-lg border border-gray-700 min-h-[200px] text-left overflow-auto">
-                    {typeof enhancedAnalysis === 'string' ? (
-                      enhancedAnalysis.split('\n').map((paragraph, index) => (
-                        <p 
-                          key={index} 
-                          className={`text-gray-300 text-base leading-relaxed mb-4 ${
-                            paragraph.startsWith('1.') || 
-                            paragraph.startsWith('2.') || 
-                            paragraph.startsWith('3.') 
-                              ? 'font-semibold text-blue-400' 
-                              : ''
-                          }`}
-                        >
-                          {paragraph}
-                        </p>
-                      ))
-                    ) : (
-                      <pre className="whitespace-pre-wrap text-gray-300 text-base leading-relaxed">
-                        {JSON.stringify(enhancedAnalysis, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-
-                  {/* Add Relevant Patterns Section */}
-                  {relevantPatterns && relevantPatterns.length > 0 && (
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-3 text-blue-400">
-                        Patterns Used for Enhancement
-                      </h3>
-                      <div className="space-y-4">
-                        {relevantPatterns.map((pattern, index) => (
-                          <div key={index} className="bg-gray-700 p-4 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">
-                                Scene Type: {pattern.scene_type}
-                              </span>
-                              <span className="text-sm text-yellow-400">
-                                Rating: {(pattern.rating * 5).toFixed(1)}/5
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-200 mb-2">
-                              {pattern.inference}
-                            </p>
-                            {pattern.typical_relationships?.length > 0 && (
-                              <div className="text-xs text-gray-400">
-                                <span className="font-semibold">Common patterns:</span>
-                                {" " + pattern.typical_relationships.map(rel => 
-                                  `${rel.subject} ${rel.spatial} ${rel.object}`
-                                ).join(', ')}
-                              </div>
-                            )}
-                            {pattern.atypical_relationships?.length > 0 && (
-                              <div className="text-xs text-gray-400 mt-1">
-                                <span className="font-semibold">Unusual patterns:</span>
-                                {" " + pattern.atypical_relationships.map(rel => 
-                                  `${rel.subject} ${rel.spatial} ${rel.object}`
-                                ).join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                {/* Enhanced Analysis Column */}
+                <div className="enhanced-analysis-column">
+                  <h3>Enhanced Analysis (with learned patterns from relationships)</h3>
+                  <div 
+                    className="analysis-text"
+                    dangerouslySetInnerHTML={{ __html: formatAnalysisText(enhancedAnalysis) }}
+                  />
                 </div>
               </div>
+
+              {/* Relationship Keys Section */}
+              {relationshipKeys && relationshipKeys.length > 0 && (
+                <div className="relationship-keys-section">
+                  <h3>Relationships derived from the Image</h3>
+                  <div className="relationship-keys-container">
+                    {relationshipKeys.map((key, index) => {
+                      const [subject, spatial, state, functional, contextual, obj] = key.split('-');
+                      return (
+                        <div key={index} className="relationship-key-card">
+                          <div className="key-components">
+                            <span className="key-subject">{subject}</span>
+                            <span className="key-spatial">{spatial}</span>
+                            <span className="key-state">{state}</span>
+                            <span className="key-functional">{functional}</span>
+                            <span className="key-contextual">{contextual}</span>
+                            <span className="key-object">{obj}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Patterns Section */}
+              {relevantPatterns && relevantPatterns.length > 0 && (
+                <div className="patterns-section">
+                  <h3>Images from DB used to enhance the analysis(Relevant Patterns)</h3>
+                  <div className="patterns-container">
+                    {relevantPatterns.map((pattern, index) => (
+                      <PatternDisplay key={index} pattern={pattern} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button className="analyze-another-button" onClick={resetState}>
+                Analyze Another Image
+              </button>
             </div>
-            <button
-              className="mt-8 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md transition-colors"
-              onClick={resetState}
-            >
-              Analyze Another Image
-            </button>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {loading && (
-          <div className="mt-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            <p className="mt-2">Analyzing...</p>
           </div>
         )}
       </div>
@@ -553,4 +587,4 @@ const ImagePreview = ({ file }) => {
   ) : null;
 };
 
-export default ImageAnalysis;
+export default Page;

@@ -1,11 +1,11 @@
 import React from 'react';
-import ImageAnalysis from './page';
+import Page from './page';
 import './App.css';
 
 function App() {
   return (
     <div className="App">
-      <ImageAnalysis />
+      <Page />
     </div>
   );
 }

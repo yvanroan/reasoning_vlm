@@ -1,5 +1,5 @@
 IMAGE_ANALYSIS_PROMPT = """
-            Analyze this image and extract objects and their relationships. Provide your response in the following JSON format:
+            Analyze this image and extract objects and their relationships. Provide your response in the JSON format below, this is just an example of the format:
 
             {
                 "objects": [

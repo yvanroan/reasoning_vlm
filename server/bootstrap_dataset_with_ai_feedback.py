@@ -9,19 +9,17 @@ from reasoning_loop import (
 )
 import aiofiles
 from time import sleep
+from vector_db import get_all_images_from_db
 
-# Load image mapping
-id_to_name = {}
-with open('id_to_name_mapping.json', 'r') as f:
-    id_to_name = json.load(f)
 
-def extract_inference_ratings(ai_response):
-    """Extract inferences and ratings from AI response text"""
+
+def extract_feedback_ratings(ai_response):
+    """Extract feedback and ratings from AI response text"""
     if not ai_response:
         return []
         
     text = ai_response.strip('"').replace('\\n', '\n')
-    parts = text.split("INFERENCE ")
+    parts = text.split("FEEDBACK ")
     
     results = []
     for part in parts[1:]:
@@ -31,24 +29,24 @@ def extract_inference_ratings(ai_response):
                 continue
                 
             content = number_and_content[1].strip()
-            inference_parts = content.split("\nRATING:")
+            feedback_parts = content.split("\nRATING:")
             
-            if len(inference_parts) < 2:
+            if len(feedback_parts) < 2:
                 continue
             
-            inference_text = inference_parts[0].strip()
-            rating_text = inference_parts[1].strip()
+            feedback_text = feedback_parts[0].strip()
+            rating_text = feedback_parts[1].strip()
             rating = float(rating_text.split("\n")[0])
             
-            results.append((inference_text, rating))
+            results.append((feedback_text, rating))
         except Exception as e:
-            print(f"Error extracting inference: {e}")
+            print(f"Error extracting feedback: {e}")
             continue
     
     return results
 
-async def generate_inference(prompt, image_path):
-    """Generate inferences about a scene"""
+async def generate_feedback(prompt, image_path):
+    """Generate feedback about a scene"""
     try:
         async with aiofiles.open(image_path, 'rb') as f:
             file_data = await f.read()
@@ -68,7 +66,7 @@ async def generate_inference(prompt, image_path):
         )
 
         async with aiohttp.ClientSession() as session:
-            async with session.post("http://localhost:5000/analyze/all", data=form_data) as response:
+            async with session.post("http://localhost:8000/analyze/all", data=form_data) as response:
                 if response.status == 200:
                     return await response.text()
                 else:
@@ -79,17 +77,18 @@ async def generate_inference(prompt, image_path):
         print(f"Error analyzing image {image_path}: {str(e)}")
         return None
 
-def test_reasoning_pipeline_with_feedback(image_id, inferences_and_ratings, scene_analysis):
-    """Process and store feedback for inferences"""
-    for inference_text, rating in inferences_and_ratings:
+def test_reasoning_pipeline_with_feedback(image_id, feedback_and_ratings, scene_analysis):
+    """Process and store feedback"""
+    
+    for feedback_text, rating in feedback_and_ratings:
         store_inference_feedback(
             image_id,
-            inference_text,
+            feedback_text,
             scene_analysis,
             rating
         )
 
-async def test_reasoning_pipeline(image_id):
+async def test_reasoning_pipeline(image_name, image_id):
     """Run complete reasoning pipeline for an image"""
     
     scene_analysis = analyze_image(image_id)
@@ -123,24 +122,24 @@ async def test_reasoning_pipeline(image_id):
 
     Format your response as:
 
-    INFERENCE 1: [Your detailed inference]
+    FEEDBACK 1: [Your detailed feedback]
     RATING: [0.0-1.0]
     """
 
-    inference = await generate_inference(base_prompt, f"processed_images/{id_to_name[image_id]}")
-    print("\n inference", inference)
-    inferences_and_ratings = extract_inference_ratings(inference)
-    print("\n inferences_and_ratings", inferences_and_ratings)
-    test_reasoning_pipeline_with_feedback(image_id, inferences_and_ratings, scene_analysis)
-    print(image_id)
+    feedback = await generate_feedback(base_prompt, f"processed_images/{image_name}")
+    feedback_and_ratings = extract_feedback_ratings(feedback)
+    test_reasoning_pipeline_with_feedback(image_id, feedback_and_ratings, scene_analysis)
 
-def run_reasoning_pipeline():
+def bootstrap_reasoning_pipeline_with_feedback():
     """Run pipeline for all images"""
+    images = get_all_images_from_db()
 
-    for image_id in id_to_name:
-
-        asyncio.run(test_reasoning_pipeline(image_id))
-        sleep(10)
+    for i, image_id in enumerate(images['ids']):
+        if i > 185:
+            image_name = images['metadatas'][i]['image_name']
+            print(f"Processing image {image_name} (ID: {image_id})")
+            asyncio.run(test_reasoning_pipeline(image_name, image_id))
+            sleep(7)
 
 if __name__ == "__main__":
-    run_reasoning_pipeline()
+    bootstrap_reasoning_pipeline_with_feedback()

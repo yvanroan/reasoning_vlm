@@ -1,6 +1,5 @@
 client/node_modules
 server/venv
-./.env
 server/processed_images/*
 server/images/*
 server/test_images/*
@@ -13,35 +12,16 @@ server/tests.py
 server/image_mapping.json
 server/id_to_name_mapping.json
 server/myenv
+server/compare_inferences.py
+server/knowledge_graph.py
+server/visualizer.py
+server/move_images.py
 
 
-cdk/test/
+cdk/
 
-# CDK asset staging directory
-cdk/cdk.out/
+client/public/images
+client/src/MultiImageUpload.js
+client/src/ImageAnalysis.js
 
-# CDK context and cache
-cdk/.cdk.staging/
-cdk/cdk.context.json
-
-# Dependencies
-cdk/node_modules/
-
-# TypeScript compilation output - more specific patterns
-cdk/lib/**/*.js
-cdk/lib/**/*.d.ts
-cdk/bin/**/*.js
-cdk/bin/**/*.d.ts
-!cdk/bin/cdk.js
-!cdk/jest.config.js
-
-# CDK asset hash files
-cdk/*.asset.*
-
-# AWS credentials and config
-cdk/.aws/
-
-# TypeScript build info
-cdk/*.tsbuildinfo
-
-
+.env

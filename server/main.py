@@ -11,13 +11,22 @@ from typing import Optional, List
 from context_integration import analyze_image, generate_inference, get_inference_from_context_integration
 from reasoning_loop import generate_enhanced_inference, store_inference_feedback
 from google import genai
-from compare_inferences import ingest_single_image
+from google.genai.types import Part, PartDict
+from ingestion_pipeline import ingest_single_image
 from prompts import IMAGE_ANALYSIS_PROMPT
 from fastapi.staticfiles import StaticFiles
+import sys
+
 # Load environment variables
 load_dotenv()
 
-app = FastAPI()
+# Create FastAPI app with logging
+app = FastAPI(
+    title="Visual Reasoning API",
+    description="API for visual reasoning and analysis",
+    version="1.0.0",
+    debug=True  # Enable debug mode for more detailed logging
+)
 
 # Configure CORS
 app.add_middleware(
@@ -41,12 +50,9 @@ PROCESSED_FOLDER = "processed_images"
 IMAGE_FOLDER = "images"
 
 # Load image mappings
-id_to_name = {}
 name_to_id = {}
 
 try:
-    with open('id_to_name_mapping.json', 'r') as f:
-        id_to_name = json.load(f)
     
     with open('image_mapping.json', 'r') as f:
         name_to_id = json.load(f)
@@ -64,11 +70,16 @@ class FeedbackRequest(BaseModel):
     filename: str
     basicRating: int
     basicFeedback: Optional[str] = ""
+    scene_analysis: Optional[dict] = {}
 
 # Add this Pydantic model for the enhanced inference request
 class EnhancedInferenceRequest(BaseModel):
     filename: str
     scene_analysis: dict
+    feedback_id: Optional[str] = ""
+# Add this Pydantic model for the upload URL request
+class UploadUrlRequest(BaseModel):
+    fileName: str
 
 @app.get("/files")
 async def get_files():
@@ -87,20 +98,24 @@ async def basic_inference(request: ExistingImageRequest):
     """Inference on an image using relationships stored in the vector database"""
     try:
         filename = request.filename
-        # print(filename)
-        
+        image_id = "-1"
         if filename in name_to_id:
             image_id = name_to_id[filename]
         else:
             image_id = await ingest_single_image(filename)
-            
-        if not image_id:
-            raise HTTPException(status_code=400, detail="Failed to process image")
-            
-        # Get scene analysis
-        scene_analysis = analyze_image(image_id)
+            name_to_id[filename] = image_id
 
-        # Get basic analysis
+        if image_id == "-1":
+            raise HTTPException(status_code=400, detail="Failed to process image into the database. please retry.")
+            
+        # Get scene analysis\
+        scene_analysis = analyze_image(image_id)
+        
+
+        if scene_analysis is None or not scene_analysis['typical_relationships']:
+            raise HTTPException(status_code=400, detail="Failed to analyze image. please retry")
+
+        
         basic_result = await get_inference_from_context_integration(scene_analysis, image_id)
         
         return {
@@ -108,6 +123,8 @@ async def basic_inference(request: ExistingImageRequest):
             "scene_analysis": scene_analysis
         }
     except Exception as e:
+        print(f"Error in basic inference: {str(e)}", flush=True)
+        print(f"Full error details: {e}", flush=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/inference/enhanced")
@@ -116,9 +133,7 @@ async def enhanced_inference(request: EnhancedInferenceRequest):
     try:
         filename = request.filename
         scene_analysis = request.scene_analysis
-        
-        print(f"Received request for enhanced inference: filename={filename}")
-        print(f"Scene analysis: {scene_analysis}")
+        feedback_id = request.feedback_id
         
         if filename not in name_to_id:
             raise HTTPException(status_code=400, detail=f"Image not found: {filename}")
@@ -126,9 +141,10 @@ async def enhanced_inference(request: EnhancedInferenceRequest):
         image_path = f"{PROCESSED_FOLDER}/{filename}"
         if not os.path.exists(image_path):
             raise HTTPException(status_code=400, detail=f"Image file not found at {image_path}")
-            
+        
         # Get enhanced analysis
-        result, relevant_patterns = await generate_enhanced_inference(
+        result, relevant_patterns, relationship_keys = await generate_enhanced_inference(
+            feedback_id=feedback_id,
             scene_context=scene_analysis,
             image_path=image_path
         )
@@ -138,7 +154,8 @@ async def enhanced_inference(request: EnhancedInferenceRequest):
         
         return {
             "text": result,
-            "relevant_patterns": relevant_patterns
+            "relevant_patterns": relevant_patterns,
+            "relationship_keys": relationship_keys
         }
         
     except Exception as e:
@@ -153,13 +170,13 @@ async def inference(image: UploadFile, text: str = Form()):
         image_contents = await image.read()
        
         message = [
-            text,
-            {
-                "inline_data": {
-                    "mime_type": "image/jpeg",
-                    "data": base64.b64encode(image_contents).decode('utf-8')
-                }
-            }
+            Part(text=text),
+            Part(
+                inline_data=PartDict(
+                    mime_type="image/jpeg",
+                    data=base64.b64encode(image_contents).decode('utf-8')
+                )
+            )
         ]
         
         response = chat.send_message(message)
@@ -169,21 +186,20 @@ async def inference(image: UploadFile, text: str = Form()):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/analyze/relationships/image")
-async def analyze_image_route(image: UploadFile = File(...)):
+async def analyze_image_route(image: UploadFile):
     """Analyze a newly uploaded image and derive relationships"""
     try:
-        # Read the image file
+        
         image_contents = await image.read()
         
-        # Create the message parts for basic analysis
         message = [
-            IMAGE_ANALYSIS_PROMPT,
-            {
-                "inline_data": {
-                    "mime_type": "image/jpeg",
-                    "data": base64.b64encode(image_contents).decode('utf-8')
-                }
-            }
+            Part(text=IMAGE_ANALYSIS_PROMPT),
+            Part(
+                inline_data=PartDict(
+                    mime_type="image/jpeg",
+                    data=base64.b64encode(image_contents).decode('utf-8')
+                )
+            )
         ]
         
         response = chat.send_message(message)
@@ -193,10 +209,7 @@ async def analyze_image_route(image: UploadFile = File(...)):
         # and generate the enhanced analysis with few-shot learning
         
         return response.text
-    # {
-    #         "basic": basic_response.text,
-    #         "enhanced": "Enhanced analysis would be generated through your few-shot learning pipeline."
-    #     }
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -213,32 +226,41 @@ async def submit_feedback(request: FeedbackRequest):
     """Store user feedback on analyses"""
     try:
         # Find image ID from filename
-        image_id = name_to_id.get(request.filename)
+        
+        image_id = name_to_id[request.filename]
         
         if not image_id:
             raise HTTPException(status_code=400, detail="Image not found")
             
-        # Get scene context for the image
-        scene_context = analyze_image(image_id)
         
         # Store feedback if ratings are provided
-        if request.basicRating > 0 and request.basicFeedback:
-            store_inference_feedback(
-                image_id=image_id,
-                inference=request.basicFeedback,
-                scene_context=scene_context,
-                rating=request.basicRating / 5.0  # Convert 5-star to 0-1 scale
-            )
+        if request.basicRating < 0:
+            raise HTTPException(status_code=400, detail="Rating must be greater than 0")
+
+        feedback_id = store_inference_feedback(
+            image_id=image_id,
+            inference=request.basicFeedback,
+            scene_context=request.scene_analysis,
+            rating=request.basicRating / 5.0  # Convert 5-star to 0-1 scale
+        )
             
         
             
-        return {"success": True}
+        return {"feedback_id": feedback_id,}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # Add this after creating the FastAPI app
 app.mount("/processed_images", StaticFiles(directory="processed_images"), name="processed_images")
+app.mount("/images", StaticFiles(directory="images"), name="images")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    sys.stdout.reconfigure(line_buffering=True)
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000,
+        log_level="debug",  # Set to debug for more verbose output
+        reload=False,
+        access_log=True)

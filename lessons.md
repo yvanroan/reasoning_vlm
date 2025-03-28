@@ -10,16 +10,7 @@ when you make a call, after a long time the generation gets worse.
 
 kind of feedback that you shoudld provide:
 
-Specificity of relationships: "I appreciate how the enhanced inference recognized the relationship between the candle and reflective surfaces and how they work together to create an effect."
-
-Causal connections: "The connection between the unlit state of the candle and the inference about 'recently prepared' or 'will light soon' is insightful."
-
-: "The enhanced inference's mention of 'self-care ritual' shows good understanding of how these objects typically function together."
-
-Novel insights: "I'd like more insight into why certain objects were positioned in relation to others - for example, why the vase is next to the candle rather than elsewhere."
-
-examples: 
-This analysis shows strong causal connections by linking the illuminated phone screen to recent usage and explaining the positioning as a deliberate user action. The context understanding is excellent, correctly identifying the Walkman branding and connecting it to music functionality. However, it could be improved with more specificity about the unique relationships between interface elements (like the arrangement of playback controls and how they relate to the screen display). The analysis lacks novel insights that go beyond obvious observations—consider what the specific arrangement of controls or the interface design reveals about user experience or interaction patterns that aren't immediately apparent.
+the text feedback isn't important as it is too laborious the rating is good enough.
 
 
 to do:
@@ -30,3 +21,17 @@ make sure that the inference/enhanced inference endpoint is used after the user 
 show the user the reasoing pattern behind the enhanced inference.
 
 also mention the type of feedback that you want the user to provide.
+
+
+
+
+when you abuse on using gemini, it gets dumber. e.g:
+it's assuming that every image must have a coffee mug or desk
+"
+Raw response: I am unable to analyze objects and their relationships as there is no coffee mug or desk in the image.
+Error parsing analysis result for images/x.jpg: parse_analysis_result failed to parse objects, relationships and scene_description
+Raw response: "I am unable to analyze objects and their relationships as there is no coffee mug or desk in the image."
+Error ingesting image: 'NoneType' object is not subscriptable
+Error in basic inference: Expected ID to be a str, got None in get.
+Full error details: Expected ID to be a str, got None in get.
+"

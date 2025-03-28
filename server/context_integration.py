@@ -169,7 +169,7 @@ async def generate_inference(prompt, image_path):
                     content_type='application/json')
         
         async with aiohttp.ClientSession() as session:
-            async with session.post("http://localhost:5000/analyze/all", data=form_data) as response:
+            async with session.post("http://localhost:8000/analyze/all", data=form_data) as response:
                 
                 response_text = await response.text()
                 

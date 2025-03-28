@@ -13,7 +13,7 @@ import re
 # Configuration
 IMAGE_FOLDER = "images"  # Change this to your image folder path
 PROCESSED_FOLDER = "processed_images"  # Folder to move processed images
-API_ENDPOINT = "http://localhost:5000/analyze/relationships/image"
+API_ENDPOINT = "http://localhost:8000/analyze/relationships/image"
 SUPPORTED_FORMATS = {'.jpg', '.jpeg'}
 
 
@@ -92,28 +92,93 @@ async def process_single_image(session, image_path):
         async with session.post(API_ENDPOINT, data=form_data) as response:
             if response.status == 200:
                 result = await response.text()
-        
-                objects, relationships, scene_description = parse_analysis_result(result)
-                # Move the processed image
-                processed_path = Path(PROCESSED_FOLDER) / os.path.basename(image_path)
-                os.rename(image_path, processed_path)
+                try:
+                    objects, relationships, scene_description = parse_analysis_result(result)
 
-                
-                analysis_result = {
-                    'image_path': str(processed_path),
-                    'objects': json.dumps(objects),
-                    'relationships': json.dumps(relationships),
-                    'scene_description': scene_description
-                }
-                
-                return analysis_result
+                    if not objects or scene_description == "":
+                        raise Exception("parse_analysis_result failed to parse objects, relationships and scene_description")
+                        
+                    # Move the processed image
+                    processed_path = Path(PROCESSED_FOLDER) / os.path.basename(image_path)
+                    os.rename(image_path, processed_path)
+
+                    analysis_result = {
+                        'image_path': str(processed_path),
+                        'objects': json.dumps(objects),
+                        'relationships': json.dumps(relationships),
+                        'scene_description': scene_description
+                    }
+                    
+                    return analysis_result
+                except Exception as e:
+                    print(f"Error parsing analysis result for {image_path}: {str(e)}")
+                    print(f"Raw response: {result}")
+                    return None
             else:
+                error_text = await response.text()
                 print(f"Error processing {image_path}: {response.status}")
+                print(f"Error details: {error_text}")
                 return None
                 
     except Exception as e:
         print(f"Error processing {image_path}: {str(e)}")
         return None
+
+
+
+
+async def ingest_single_image(image_name):
+    """Process and ingest a single image from the images folder"""
+    try:
+        image_path = f"{IMAGE_FOLDER}/{image_name}"
+        if not os.path.exists(image_path):
+            print(f"Image {image_name} not found in server/images/")
+            return None
+            
+        # Create processed images folder if it doesn't exist
+        os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+
+        # Load existing mapping if it exists
+        mapping_file = "image_mapping.json"
+        if os.path.exists(mapping_file):
+            with open(mapping_file, 'r') as f:
+                image_mapping = json.load(f)
+        else:
+            image_mapping = {}
+
+        # Generate unique image ID
+        image_id = f"id{len(os.listdir(PROCESSED_FOLDER)) + 1}"
+
+        async with aiohttp.ClientSession() as session:
+            result = await process_single_image(session, image_path)
+        
+
+        if result['objects'] is None:
+            print("Failed to process image in ingest_single_image, Gemini API is not working", flush=True)
+            return None
+        
+        add_image_to_db(
+            image_id, 
+            result['image_path'], 
+            result['objects'], 
+            result['scene_description'], 
+            image_name, 
+            result['relationships']
+        )
+         
+        
+        image_mapping[image_name] = image_id
+        
+        with open(mapping_file, 'w') as f:
+            json.dump(image_mapping, f, indent=4)
+        
+        return image_id
+        
+    except Exception as e:
+        print(f"Error ingesting image: {e}")
+        return None
+
+
 
 async def process_images():
     # Create processed images folder if it doesn't exist
@@ -132,9 +197,7 @@ async def process_images():
         with open(id_to_name_file, 'r') as f:
             id_to_name = json.load(f)
     else:
-        id_to_name = {}  
-
-    
+        id_to_name = {}
 
     cur_dataset_size = len(list(Path(PROCESSED_FOLDER).iterdir())) + 1
     # Get list of images to process
@@ -152,10 +215,10 @@ async def process_images():
         # Process images one at a time
         for image_path in image_files:
             image_name = os.path.basename(image_path)
-            result = await process_single_image(session, str(image_path))
+            result = await process_single_image(session, str(image_path))  # Use actual image path
             if not result:
                 print(f"Error processing {image_path}")
-                return None
+                return None  # Continue with next image instead of returning None
             
             image_id = "id" + str(cur_dataset_size)
             add_image_to_db(image_id, result['image_path'], result['objects'], result['scene_description'], image_name, result['relationships'])
@@ -174,6 +237,6 @@ async def process_images():
     
     print(f"Processed {cur_dataset_size} images successfully")
 
+
 if __name__ == "__main__":
-    # Add aiofiles to requirements.txt
     asyncio.run(process_images())

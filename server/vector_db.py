@@ -38,6 +38,7 @@ def add_image_to_db(image_id, image_path, objects_in_image, description, image_n
 def get_all_images_from_db():
     return collection.get(include=['embeddings', 'metadatas'])
 
+
 def get_image_from_db(image_id):
     return collection.get(ids=[image_id], include=['uris', 'metadatas'])
 
@@ -82,7 +83,7 @@ def add_feedback_to_db(feedback_id, text, metadata):
         print(f"Error adding feedback to DB: {e}")
         return False
 
-def get_feedback_by_relationships(relationship_keys, limit=3):
+def get_feedback_by_relationships(feedback_id,relationship_keys, limit=3):
     """
     Find feedback entries that match specific relationship patterns
     
@@ -93,6 +94,9 @@ def get_feedback_by_relationships(relationship_keys, limit=3):
     try:
         all_results = []
         seen_ids = set()
+        seen_image_ids = set()
+        seen_relationships = set()
+        seen_ids.add(feedback_id)
         
         # First try the simplest approach - get all feedback with high ratings
         all_feedback = feedback_collection.get(
@@ -105,27 +109,50 @@ def get_feedback_by_relationships(relationship_keys, limit=3):
         # Then manually filter for relationship matches
         for i, metadata in enumerate(all_feedback['metadatas']):
             feedback_id = all_feedback['ids'][i]
+            image_id = metadata.get("image_id", "")
             
             # Skip if we've already seen this ID
             if feedback_id in seen_ids:
                 continue
+
+            if image_id in seen_image_ids:
+                continue
                 
-            # Check each relationship key against the metadata
-            for key in relationship_keys:
-                parts = key.split("-")
-                if len(parts) == 3:
-                    subject, spatial, obj = parts
+            for field in ["atypical_relationships", "typical_relationships"]:
+                field_data = metadata.get(field, "")
+
+                if image_id in seen_image_ids or field_data == "":
+                    break
                     
-                    # Simple text search in the JSON fields
-                    for field in ["atypical_relationships", "typical_relationships"]:
-                        field_data = metadata.get(field, "")
+                # Parse the JSON string into a list of dictionaries
+                try:
+                    field_data = json.loads(field_data)
+                except json.JSONDecodeError:
+                    print(f"Error parsing JSON for {field}: {field_data}", flush=True)
+                    continue
+                    
+                for key in relationship_keys:
+                    subject, spatial, state, functional, contextual, obj = key.split("-")
+
+                    if image_id in seen_image_ids:
+                        break
+                    
+                    # If all three components are in the field data, consider it a match
+                    for data in field_data:
                         
-                        # If all three components are in the field data, consider it a match
-                        if (subject in field_data and 
-                            spatial in field_data and 
-                            obj in field_data):
-                                
+
+                        if (
+                            (subject in data['subject'] or subject in data['object']) and
+                            (
+                                spatial in data['spatial'] or
+                                state in data['state'] or
+                                functional in data['functional'] or
+                                contextual in data['contextual']
+                            ) and
+                            (obj in data['object'] or obj in data['subject'])
+                        ):
                             seen_ids.add(feedback_id)
+                            seen_image_ids.add(image_id)
                             all_results.append((feedback_id, metadata))
                             break  # Move to next ID after finding a match
         
@@ -136,6 +163,7 @@ def get_feedback_by_relationships(relationship_keys, limit=3):
         # Limit results
         all_results = all_results[:limit]
         result_ids = [r[0] for r in all_results]
+        
         result_metadatas = [r[1] for r in all_results]
         
         return {

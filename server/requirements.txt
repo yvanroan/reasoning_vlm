@@ -15,3 +15,4 @@ aiofiles
 spacy
 networkx
 open_clip_torch
+boto3
